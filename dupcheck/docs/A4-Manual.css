@@ -1,0 +1,379 @@
+/* @theme A4-Manual */
+
+@import 'default';
+
+/* ===== A4 縦レイアウト ===== */
+section {
+  width: 210mm;
+  height: 297mm;
+  justify-content: start;
+  font-family: 'Segoe UI', 'Yu Gothic UI', 'Hiragino Sans', sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #1a1a2e;
+  padding: 50px 60px;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+/* ===== カバーページ ===== */
+section.cover {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0;
+  background: linear-gradient(160deg, #0f3460 0%, #16213e 50%, #0f3460 100%);
+  color: #ffffff;
+}
+
+.cover-accent {
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(90deg, #e94560 0%, #f5a623 50%, #4facfe 100%);
+}
+
+.cover-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 72px;
+}
+
+.cover-category {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: #4facfe;
+  margin-bottom: 20px;
+}
+
+.cover-title {
+  font-size: 52px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  line-height: 1.1;
+  margin-bottom: 12px;
+  color: #ffffff;
+}
+
+.cover-subtitle {
+  font-size: 18px;
+  color: #a8c8f0;
+  margin-bottom: 48px;
+  font-weight: 400;
+}
+
+.cover-divider {
+  width: 48px;
+  height: 3px;
+  background: linear-gradient(90deg, #e94560, #f5a623);
+  margin-bottom: 32px;
+  border-radius: 2px;
+}
+
+.cover-description {
+  font-size: 14px;
+  color: #8bafd4;
+  line-height: 1.8;
+  max-width: 480px;
+}
+
+.cover-meta {
+  padding: 32px 72px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  font-size: 11px;
+  color: #6a8fb0;
+}
+
+.cover-meta-item strong {
+  display: block;
+  color: #a8c8f0;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+
+/* ===== ページ番号 ===== */
+section::after {
+  font-size: 11px;
+  color: #999;
+  bottom: 24px;
+  right: 60px;
+}
+
+/* ===== ヘッダーバー ===== */
+section:not(.cover):not(.toc)::before {
+  content: 'dupcheck';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #0f3460 0%, #4facfe 100%);
+  border-radius: 0;
+  font-size: 0;
+}
+
+/* ===== 見出し ===== */
+h1 {
+  font-size: 26px;
+  font-weight: 700;
+  color: #0f3460;
+  margin: 0 0 24px 0;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e0ecf8;
+  line-height: 1.3;
+}
+
+h1::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 1em;
+  background: linear-gradient(180deg, #4facfe, #0f3460);
+  margin-right: 14px;
+  border-radius: 2px;
+  vertical-align: middle;
+  margin-top: -2px;
+}
+
+h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: #0f3460;
+  margin: 24px 0 12px 0;
+  padding-left: 12px;
+  border-left: 3px solid #4facfe;
+  line-height: 1.4;
+}
+
+h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: #333;
+  margin: 16px 0 8px 0;
+}
+
+/* ===== テーブル ===== */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin: 16px 0;
+}
+
+thead th {
+  background: #0f3460;
+  color: #ffffff;
+  padding: 9px 14px;
+  text-align: left;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+thead th:first-child { border-radius: 6px 0 0 0; }
+thead th:last-child  { border-radius: 0 6px 0 0; }
+
+tbody tr:nth-child(even) { background: #f4f8fd; }
+tbody tr:nth-child(odd)  { background: #ffffff; }
+tbody tr:hover           { background: #e8f4ff; }
+
+tbody td {
+  padding: 8px 14px;
+  border-bottom: 1px solid #e8eef4;
+  vertical-align: top;
+}
+
+/* ===== コードブロック ===== */
+pre {
+  background: #1a1a2e;
+  border-radius: 8px;
+  padding: 16px 20px;
+  margin: 12px 0;
+  overflow: hidden;
+  border-left: 3px solid #4facfe;
+  color: #cdd6f4;
+}
+
+pre code,
+pre code span {
+  font-family: 'Cascadia Code', 'Consolas', 'Source Code Pro', monospace !important;
+  font-size: 11.5px !important;
+  color: #cdd6f4 !important;
+  background: transparent !important;
+  line-height: 1.65;
+}
+
+code {
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12px;
+  background: #e8f4ff;
+  color: #0f3460;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* ===== blockquote (Note) ===== */
+blockquote {
+  background: #f0f7ff;
+  border-left: 4px solid #4facfe;
+  border-radius: 0 6px 6px 0;
+  padding: 12px 16px;
+  margin: 12px 0;
+  color: #2c5f8a;
+  font-size: 13px;
+}
+
+blockquote p { margin: 0; }
+
+/* ===== 目次ページ ===== */
+section.toc {
+  background: #f8fbff;
+}
+
+.toc-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.toc-item {
+  display: flex;
+  align-items: baseline;
+  padding: 10px 0;
+  border-bottom: 1px dotted #c8d8e8;
+  font-size: 14px;
+}
+
+.toc-num {
+  font-size: 11px;
+  font-weight: 700;
+  color: #4facfe;
+  background: #e8f4ff;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 14px;
+  flex-shrink: 0;
+  font-family: monospace;
+}
+
+/* ===== バッジ ===== */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-left: 6px;
+}
+
+.badge-blue  { background: #dbeafe; color: #1e40af; }
+.badge-green { background: #dcfce7; color: #166534; }
+.badge-red   { background: #fee2e2; color: #991b1b; }
+.badge-gray  { background: #f3f4f6; color: #374151; }
+
+/* ===== 終了コードカード ===== */
+.exit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin: 16px 0;
+}
+
+.exit-card {
+  border-radius: 10px;
+  padding: 18px;
+  text-align: center;
+}
+
+.exit-card.ok    { background: #f0fdf4; border: 2px solid #86efac; }
+.exit-card.warn  { background: #fffbeb; border: 2px solid #fcd34d; }
+.exit-card.error { background: #fff1f2; border: 2px solid #fda4af; }
+
+.exit-code {
+  font-size: 32px;
+  font-weight: 800;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.exit-card.ok    .exit-code { color: #16a34a; }
+.exit-card.warn  .exit-code { color: #d97706; }
+.exit-card.error .exit-code { color: #dc2626; }
+
+.exit-label {
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.exit-desc {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.5;
+}
+
+/* ===== フロー ===== */
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+
+.flow-step {
+  background: #0f3460;
+  color: white;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 90px;
+}
+
+.flow-arrow {
+  font-size: 18px;
+  color: #4facfe;
+}
+
+/* ===== ディレクトリツリー ===== */
+.tree {
+  font-family: 'Cascadia Code', 'Consolas', monospace;
+  font-size: 12.5px;
+  background: #f8fbff;
+  border: 1px solid #dce8f4;
+  border-radius: 8px;
+  padding: 16px 20px;
+  line-height: 1.8;
+}
+
+.tree-dir  { color: #0f3460; font-weight: 600; }
+.tree-file { color: #444; }
+.tree-note { color: #888; font-style: italic; font-size: 11px; }
+
+/* ===== セクション区切り ===== */
+section.section-divider {
+  background: linear-gradient(135deg, #0f3460 0%, #16213e 100%);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 60px 72px;
+}
+
+p { margin: 0 0 10px 0; }
+ul { margin: 8px 0; padding-left: 20px; }
+li { margin: 4px 0; }

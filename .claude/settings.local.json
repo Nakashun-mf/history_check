@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx @marp-team/marp-cli --version 2>&1)",
+      "Bash(npx @marp-team/marp-cli dupcheck/docs/manual.md --pdf --allow-local-files -o dupcheck/docs/manual.pdf 2>&1)",
+      "WebFetch(domain:zenn.dev)",
+      "Bash(python -c \"\ncontent = open\\('dupcheck/docs/manual.md', encoding='utf-8'\\).read\\(\\)\nimport re\ncontent = re.sub\\(r'\\\\n<style>.*?</style>\\\\n', '\\\\n', content, flags=re.DOTALL\\)\nopen\\('dupcheck/docs/manual.md', 'w', encoding='utf-8'\\).write\\(content\\)\nprint\\('Done'\\)\n\" 2>&1)",
+      "Bash(npx @marp-team/marp-cli dupcheck/docs/manual.md --pdf --allow-local-files --theme dupcheck/docs/A4-Manual.css -o dupcheck/docs/manual.pdf 2>&1)"
+    ]
+  }
+}
