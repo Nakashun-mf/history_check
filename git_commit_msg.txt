@@ -1,0 +1,8 @@
+dupcheck CLIツールを implementation.mdc に従い実装
+
+- C# 12 / .NET 8、win-x64 単一exe対応
+- Options/CheckResult/Checker/Logger/Program を実装
+- 照合ルール: ファイル名のみ Ordinal 比較、除外は dupcheck.exe とログファイル
+- 終了コード 0/1/2、-help/-target/-history/-log/-silent/-verbose
+- xunit による Checker のユニットテスト 8 件追加
+- README・.gitignore・バージョン 1.0.0 を追加
