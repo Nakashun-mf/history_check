@@ -9,6 +9,12 @@
     <RootNamespace>dupcheck</RootNamespace>
     <LangVersion>12</LangVersion>
     <Version>1.0.0</Version>
+    <!-- 単体exe発行時: ネイティブDLLもexeに含め、実行時の一時展開を抑制 -->
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'">
+    <!-- 配布用: .pdb を出さず dupcheck.exe のみに -->
+    <DebugType>none</DebugType>
   </PropertyGroup>
 
 </Project>

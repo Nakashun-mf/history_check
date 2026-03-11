@@ -1,8 +1,5 @@
-dupcheck CLIツールを implementation.mdc に従い実装
+dupcheck.exe を単体で使えるように配布設定を整備
 
-- C# 12 / .NET 8、win-x64 単一exe対応
-- Options/CheckResult/Checker/Logger/Program を実装
-- 照合ルール: ファイル名のみ Ordinal 比較、除外は dupcheck.exe とログファイル
-- 終了コード 0/1/2、-help/-target/-history/-log/-silent/-verbose
-- xunit による Checker のユニットテスト 8 件追加
-- README・.gitignore・バージョン 1.0.0 を追加
+- csproj: IncludeNativeLibrariesForSelfExtract でネイティブDLLをexeに内包
+- Release 発行時に .pdb を出力しない設定で、配布は exe のみで完結
+- README に「単体 exe での配布」セクションを追加（.NET 不要・exe 1つのみ配布でOK）

@@ -3,7 +3,7 @@
 RPA 受注ファイル取り込み処理で、処理前ファイルが `history` フォルダに既に存在しないかをチェックする Windows 向け CLI ツール。
 
 - **言語**: C# 12 / .NET 8
-- **配布**: win-x64 単一 exe（PublishSingleFile）
+- **配布**: win-x64 単一 exe（.NET インストール不要の自己完結型）
 
 ## 使い方
 
@@ -29,11 +29,12 @@ cd dupcheck
 dotnet build
 dotnet test
 
-# 単一 exe で発行（配布用）
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+# 単体 exe で発行（配布用・.NET 不要）
+dotnet publish src/dupcheck/dupcheck.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
 ```
 
-発行先: `src/dupcheck/bin/Release/net8.0/win-x64/publish/dupcheck.exe`
+- **発行先**: `src/dupcheck/bin/Release/net8.0/win-x64/publish/dupcheck.exe`
+- **配布**: 上記 **dupcheck.exe のみ**をコピーして渡せば、対象 PC に .NET がなくても実行可能です。
 
 ## 開発者向け
 
