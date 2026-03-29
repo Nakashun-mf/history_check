@@ -3,91 +3,127 @@ using System.Text;
 namespace dupcheck;
 
 /// <summary>
-/// コンソール出力およびログファイル出力を担当する。
-/// -silent 時はコンソールへ一切出力しない。
-/// -log 指定時は同じ内容を UTF-8 BOM のファイルに新規作成（上書き）する。
+/// 全出力を担当する。
+/// stdout    : 重複ファイル名のみ・1行1ファイル名。-silent 時は出力しない。
+/// -dupfile  : 人間が読みやすいブロック形式・追記モード。
+/// -log      : CSV 形式・追記モード。ヘッダーは新規作成時のみ書き出す。
 /// </summary>
 public sealed class Logger : IDisposable
 {
     private readonly bool _silent;
     private readonly bool _verbose;
-    private readonly string? _logFilePath;
-    private readonly StreamWriter? _logWriter;
+    private readonly StreamWriter? _csvWriter;
+    private readonly StreamWriter? _dupWriter;
 
-    private static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
+    internal static readonly UTF8Encoding Utf8WithBom = new(encoderShouldEmitUTF8Identifier: true);
+    private static readonly UTF8Encoding Utf8NoBom = new(encoderShouldEmitUTF8Identifier: false);
 
-    public Logger(bool silent, bool verbose, string? logFilePath)
+    private const string CsvHeader = "実行日時,対象ディレクトリ,historyディレクトリ,ファイル名,判定";
+
+    public Logger(bool silent, bool verbose, string? logFilePath, string? dupFilePath)
     {
         _silent = silent;
         _verbose = verbose;
-        _logFilePath = logFilePath;
 
         if (!string.IsNullOrEmpty(logFilePath))
         {
-            _logWriter = new StreamWriter(logFilePath, append: false, Utf8WithBom);
+            bool isNew = !File.Exists(logFilePath) || new FileInfo(logFilePath).Length == 0;
+            _csvWriter = new StreamWriter(logFilePath, append: true, isNew ? Utf8WithBom : Utf8NoBom);
+            if (isNew)
+            {
+                _csvWriter.WriteLine(CsvHeader);
+            }
         }
-        else
+
+        if (!string.IsNullOrEmpty(dupFilePath))
         {
-            _logWriter = null;
+            bool isNew = !File.Exists(dupFilePath) || new FileInfo(dupFilePath).Length == 0;
+            _dupWriter = new StreamWriter(dupFilePath, append: true, isNew ? Utf8WithBom : Utf8NoBom);
         }
     }
 
-    /// <summary>1行をコンソールおよびログファイルに出力する（-silent の場合は何もしない）</summary>
-    public void WriteLine(string line)
-    {
-        if (!_silent)
-        {
-            Console.WriteLine(line);
-        }
-        _logWriter?.WriteLine(line);
-    }
-
-    /// <summary>エラーメッセージを stderr およびログファイルに出力する（-silent でも stderr は出力する仕様とするが、仕様では「コンソール出力を完全に抑制」なので silent 時はコンソールは出さない）</summary>
-    public void WriteError(string message)
-    {
-        if (!_silent)
-        {
-            Console.Error.WriteLine(message);
-        }
-        _logWriter?.WriteLine(message);
-    }
-
-    /// <summary>ログファイルをフラッシュしてクローズする</summary>
     public void Dispose()
     {
-        _logWriter?.Dispose();
+        _csvWriter?.Dispose();
+        _dupWriter?.Dispose();
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>照合結果を仕様フォーマットで出力する</summary>
+    /// <summary>照合結果を stdout・-dupfile・-log の各出力先に書き出す</summary>
     public void WriteResults(
         string startTime,
         string targetDir,
         string historyDir,
         IReadOnlyList<CheckResult> results)
     {
-        WriteLine("[dupcheck] チェック開始: " + startTime);
-        WriteLine("[dupcheck] 対象ディレクトリ : " + targetDir);
-        WriteLine("[dupcheck] historyディレクトリ: " + historyDir);
-        WriteLine("");
+        WriteStdout(results);
+        WriteDupFile(startTime, targetDir, historyDir, results);
+        WriteCsv(startTime, targetDir, historyDir, results);
+    }
 
-        int duplicateCount = 0;
+    /// <summary>stdout: 重複ファイル名のみ・1行1ファイル名</summary>
+    private void WriteStdout(IReadOnlyList<CheckResult> results)
+    {
+        if (_silent) return;
+
         foreach (CheckResult r in results)
         {
             if (r.IsDuplicate)
-            {
-                WriteLine("[重複] " + r.FileName);
-                duplicateCount++;
-            }
+                Console.WriteLine(r.FileName);
+        }
+    }
+
+    /// <summary>-dupfile: 人間が読みやすいブロック形式・追記</summary>
+    private void WriteDupFile(string startTime, string targetDir, string historyDir, IReadOnlyList<CheckResult> results)
+    {
+        if (_dupWriter == null) return;
+
+        int duplicateCount = results.Count(r => r.IsDuplicate);
+        int normalCount = results.Count - duplicateCount;
+
+        _dupWriter.WriteLine("=====================================");
+        _dupWriter.WriteLine("実行: " + startTime);
+        _dupWriter.WriteLine("対象: " + targetDir);
+        _dupWriter.WriteLine("history: " + historyDir);
+        _dupWriter.WriteLine("-------------------------------------");
+
+        foreach (CheckResult r in results)
+        {
+            if (r.IsDuplicate)
+                _dupWriter.WriteLine("[重複] " + r.FileName);
             else if (_verbose)
-            {
-                WriteLine("[正常] " + r.FileName);
-            }
+                _dupWriter.WriteLine("[正常] " + r.FileName);
         }
 
-        int normalCount = results.Count - duplicateCount;
-        WriteLine("");
-        WriteLine($"---");
-        WriteLine($"チェック対象: {results.Count}件 / 重複あり: {duplicateCount}件 / 正常: {normalCount}件");
+        _dupWriter.WriteLine("-------------------------------------");
+        _dupWriter.WriteLine($"合計: {results.Count}件 / 重複: {duplicateCount}件 / 正常: {normalCount}件");
+        _dupWriter.WriteLine("=====================================");
+        _dupWriter.WriteLine("");
+    }
+
+    /// <summary>-log: CSV 形式・追記</summary>
+    private void WriteCsv(string startTime, string targetDir, string historyDir, IReadOnlyList<CheckResult> results)
+    {
+        if (_csvWriter == null) return;
+
+        foreach (CheckResult r in results)
+        {
+            if (!r.IsDuplicate && !_verbose) continue;
+
+            _csvWriter.WriteLine(string.Join(",",
+                CsvField(startTime),
+                CsvField(targetDir),
+                CsvField(historyDir),
+                CsvField(r.FileName),
+                CsvField(r.IsDuplicate ? "重複" : "正常")));
+        }
+    }
+
+    /// <summary>CSV フィールドをエスケープする。カンマ・ダブルクォート・改行を含む場合はダブルクォートで囲む</summary>
+    private static string CsvField(string value)
+    {
+        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
+            return "\"" + value.Replace("\"", "\"\"") + "\"";
+        return value;
     }
 }

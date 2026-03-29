@@ -43,17 +43,21 @@ internal static class Program
 
         Options opts = options!;
 
-        // 除外ファイル名: dupcheck.exe とログファイル名（指定時のみ）
+        // 除外ファイル名: dupcheck.exe とログファイル名・重複一覧ファイル名（指定時のみ）
         HashSet<string> excluded = new(StringComparer.Ordinal) { Checker.ExeName };
         if (!string.IsNullOrEmpty(opts.LogFile))
         {
             excluded.Add(Path.GetFileName(opts.LogFile));
         }
+        if (!string.IsNullOrEmpty(opts.DupFile))
+        {
+            excluded.Add(Path.GetFileName(opts.DupFile));
+        }
 
         IReadOnlyList<CheckResult> results = Checker.Check(opts.TargetDir, opts.HistoryDir, excluded);
 
         string startTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-        using (var logger = new Logger(opts.Silent, opts.Verbose, opts.LogFile))
+        using (var logger = new Logger(opts.Silent, opts.Verbose, opts.LogFile, opts.DupFile))
         {
             logger.WriteResults(startTime, opts.TargetDir, opts.HistoryDir, results);
         }
@@ -72,10 +76,11 @@ internal static class Program
 オプション:
   -target <dir>    チェック対象（処理前ファイル）のディレクトリ（省略時: exe と同じディレクトリ）
   -history <dir>   処理済みファイルが格納されたディレクトリ（省略時: .\history）
-  -log [<file>]    ログファイルパス（省略時: 出力しない。ファイル省略時: dupcheck_YYYYMMDD_HHMMSS.log）
-  -silent          コンソール出力を抑制
-  -verbose         全ファイルの判定結果を出力（省略時: 重複ファイルのみ）
-  -help            このヘルプを表示
+  -log [<file>]      CSV形式で追記（省略時: 出力しない。ファイル省略時: dupcheck.csv）
+  -dupfile [<file>]  人間が読みやすいブロック形式で追記（省略時: 出力しない。ファイル省略時: dupcheck.log）
+  -silent            stdout を含む全出力を抑制（終了コードのみ）
+  -verbose           全ファイルの判定結果を出力（省略時: 重複ファイルのみ）
+  -help              このヘルプを表示
 
 終了コード:
   0  正常終了（重複なし）
@@ -94,6 +99,7 @@ internal static class Program
         string targetDir = GetDefaultTargetDir();
         string historyDir = DefaultHistoryDir;
         string? logFile = null;
+        string? dupFile = null;
         bool silent = false;
         bool verbose = false;
 
@@ -118,7 +124,18 @@ internal static class Program
                 }
                 else
                 {
-                    logFile = "dupcheck_" + DateTime.Now.ToString("yyyyMMdd_HHmmss") + ".log";
+                    logFile = "dupcheck.csv";
+                }
+            }
+            else if (arg == "-dupfile")
+            {
+                if (i + 1 < args.Length && !args[i + 1].StartsWith('-'))
+                {
+                    dupFile = args[++i];
+                }
+                else
+                {
+                    dupFile = "dupcheck.log";
                 }
             }
             else if (arg == "-silent")
@@ -143,8 +160,12 @@ internal static class Program
         {
             logFile = Path.Combine(Environment.CurrentDirectory, logFile);
         }
+        if (dupFile != null && !Path.IsPathRooted(dupFile))
+        {
+            dupFile = Path.Combine(Environment.CurrentDirectory, dupFile);
+        }
 
-        options = new Options(targetDir, historyDir, logFile, silent, verbose);
+        options = new Options(targetDir, historyDir, logFile, dupFile, silent, verbose);
         return true;
     }
 
