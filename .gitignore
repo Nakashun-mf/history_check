@@ -1,0 +1,6 @@
+# ビルド成果物・配布テスト用
+*.exe
+try/
+.claude/
+git_commit_msg.txt
+dupcheck_requirements.docx

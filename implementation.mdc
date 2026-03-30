@@ -1,0 +1,206 @@
+# dupcheck — Cursor AI 実装ガイド
+
+## プロジェクト概要
+
+Windows向けCLIツール。RPA ワークフローなどにおいて、処理対象ファイルが `history` フォルダに既に存在しないかをチェックする重複検出ツール。
+
+---
+
+## 技術スタック（変更禁止）
+
+- **言語**: C# 12
+- **フレームワーク**: .NET 8
+- **ターゲット**: win-x64
+- **外部ライブラリ**: 使用しない（.NET 標準ライブラリのみ）
+- **配布形式**: `PublishSingleFile` による単一 exe
+
+---
+
+## ディレクトリ構成
+
+```
+dupcheck/
+├── src/
+│   └── dupcheck/
+│       ├── dupcheck.csproj
+│       ├── Program.cs       # エントリポイント・引数解析・終了コード制御
+│       ├── Options.cs       # コマンドライン引数のパース結果を保持するレコード
+│       ├── Checker.cs       # ファイル照合ロジック（純粋関数・副作用なし）
+│       ├── CheckResult.cs   # 照合結果を表すレコード
+│       └── Logger.cs        # コンソール出力・ログファイル出力
+└── tests/
+    └── dupcheck.Tests/
+        ├── dupcheck.Tests.csproj
+        └── CheckerTests.cs  # Checker のユニットテスト
+```
+
+---
+
+## コマンドライン仕様
+
+```
+dupcheck.exe [オプション]
+```
+
+| オプション       | 省略 | デフォルト             | 説明                                                        |
+|------------------|------|------------------------|-------------------------------------------------------------|
+| `-target <dir>`  | 可   | exe と同じディレクトリ | チェック対象ディレクトリのパス            |
+| `-history <dir>` | 可   | `.\history`            | 処理済みファイルが格納されたディレクトリパス              |
+| `-log [<file>]`  | 可   | 出力しない             | ログファイルパス。省略時は `dupcheck_YYYYMMDD_HHMMSS.log`   |
+| `-silent`        | 可   | 無効                   | コンソール出力を完全に抑制する                              |
+| `-verbose`       | 可   | 無効                   | 全ファイルの判定結果を出力（デフォルトは重複ファイルのみ）  |
+| `-help`          | —    | —                      | ヘルプを表示して終了コード 0 で終了                         |
+
+---
+
+## 終了コード（必ず守ること）
+
+| コード | 条件                                     |
+|--------|------------------------------------------|
+| `0`    | 正常終了（重複なし）                     |
+| `1`    | 重複ファイルが1件以上あり                |
+| `2`    | 引数エラー・ディレクトリ不正・その他例外 |
+
+> `Environment.Exit()` ではなく `return` で `Main` から終了コードを返すこと。
+
+---
+
+## 照合ルール（Checker.cs に実装）
+
+- `Directory.GetFiles(targetDir)` でルート直下のファイルのみ取得（`SearchOption.TopDirectoryOnly`）
+- history も同様にフラット取得（サブディレクトリ不要）
+- 比較は **ファイル名のみ**（`Path.GetFileName`）。フルパス比較は行わない
+- **`StringComparison.Ordinal`** で比較（大文字・小文字を区別する）
+- history のファイル名を `HashSet<string>` に格納して O(1) で照合する
+
+### 除外対象（target 側）
+
+以下はチェック対象から除外する：
+
+```csharp
+// 除外すべきファイル名（大文字小文字を区別）
+- "dupcheck.exe"
+- history ディレクトリ名（ファイルではないが念のため）
+- ログファイルの出力先ファイル名（-log 指定時）
+```
+
+---
+
+## Options.cs の設計方針
+
+```csharp
+// record を使うこと
+public record Options(
+    string TargetDir,
+    string HistoryDir,
+    string? LogFile,      // null = ログ出力しない
+    bool Silent,
+    bool Verbose
+);
+```
+
+- `-silent` と `-verbose` が同時に指定された場合はエラーメッセージを出力して終了コード 2 で終了
+- 存在しないディレクトリが指定された場合はエラーメッセージを出力して終了コード 2 で終了
+
+---
+
+## CheckResult.cs の設計方針
+
+```csharp
+public record CheckResult(
+    string FileName,
+    bool IsDuplicate
+);
+```
+
+---
+
+## Logger.cs の設計方針
+
+- `-silent` 時はコンソールへの書き込みを一切行わない
+- `-log` 指定時はコンソールと同じ内容をファイルにも書き込む
+- ログファイルのエンコードは **UTF-8 BOM付き**（`new UTF8Encoding(true)`）
+- ログファイルは追記ではなく**新規作成**（既存ファイルは上書き）
+
+### 出力フォーマット
+
+```
+[dupcheck] チェック開始: 2024-01-05 10:30:00
+[dupcheck] 対象ディレクトリ : C:\data\files
+[dupcheck] historyディレクトリ: C:\data\files\history
+
+[重複] data_20240103.txt
+[正常] data_20240105.txt    ← -verbose 時のみ出力
+
+---
+チェック対象: 3件 / 重複あり: 1件 / 正常: 2件
+```
+
+---
+
+## Program.cs の責務
+
+1. 引数を `Options` にパースする
+2. `-help` なら表示して `return 0`
+3. `Options` のバリデーション（ディレクトリ存在確認・silent+verbose 排他チェック）
+4. `Checker` を呼び出す
+5. `Logger` で結果を出力する
+6. 重複件数に応じて終了コードを返す（`0` or `1`）
+7. 例外は `try-catch` でラップして終了コード `2` を返す
+
+---
+
+## テスト方針（CheckerTests.cs）
+
+以下のケースを必ずテストすること：
+
+- 重複あり（完全一致）
+- 重複なし
+- 拡張子なしファイルの照合
+- 日本語ファイル名の照合
+- 大文字・小文字が異なる場合（`ABC.txt` と `abc.txt` は別物）
+- target が空ディレクトリ
+- history が空ディレクトリ
+- dupcheck.exe 本体が除外されること
+
+---
+
+## コーディング規約
+
+- C# の命名規則に従う（PascalCase for types/methods, camelCase for locals）
+- `var` は型が明らかな場合のみ使用
+- `string?` など Nullable Reference Types を有効にする（`<Nullable>enable</Nullable>`）
+- コメントは**日本語**で書く
+- マジックストリングは定数化する（例：`private const string ExeName = "dupcheck.exe";`）
+- `Console.Error.WriteLine` はエラーメッセージ専用。通常出力は `Console.WriteLine`
+
+---
+
+## csproj 設定
+
+```xml
+<PropertyGroup>
+  <OutputType>Exe</OutputType>
+  <TargetFramework>net8.0</TargetFramework>
+  <Nullable>enable</Nullable>
+  <ImplicitUsings>enable</ImplicitUsings>
+  <AssemblyName>dupcheck</AssemblyName>
+  <RootNamespace>dupcheck</RootNamespace>
+</PropertyGroup>
+```
+
+### 発行コマンド
+
+```bash
+dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
+
+---
+
+## やってはいけないこと
+
+- `Environment.Exit()` の使用（終了コードは Main の return で制御する）
+- ファイルの移動・削除・書き込みなど破壊的操作
+- history サブフォルダの再帰検索（`SearchOption.TopDirectoryOnly` を必ず使う）
+- `StringComparison.OrdinalIgnoreCase` の使用（大文字小文字は区別する）
+- 外部 NuGet パッケージの追加
