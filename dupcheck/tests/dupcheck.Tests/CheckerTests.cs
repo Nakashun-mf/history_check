@@ -70,13 +70,13 @@ public sealed class CheckerTests : IDisposable
     [Fact]
     public void 日本語ファイル名の照合()
     {
-        CreateFile(_targetDir, "受注_20240105.txt");
-        CreateFile(_historyDir, "受注_20240105.txt");
+        CreateFile(_targetDir, "データ_20240105.txt");
+        CreateFile(_historyDir, "データ_20240105.txt");
 
         IReadOnlyList<CheckResult> results = Checker.Check(_targetDir, _historyDir);
 
         CheckResult r = Assert.Single(results);
-        Assert.Equal("受注_20240105.txt", r.FileName);
+        Assert.Equal("データ_20240105.txt", r.FileName);
         Assert.True(r.IsDuplicate);
     }
 
